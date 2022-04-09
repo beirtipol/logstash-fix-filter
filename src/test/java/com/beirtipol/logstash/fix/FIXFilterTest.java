@@ -707,7 +707,6 @@ public class FIXFilterTest {
         when(config.get(FIXFilter.DICTIONARY_PATH_CONFIG)).thenReturn(URI.create(dictionary));
         when(config.get(FIXFilter.DELIMITER_CONFIG)).thenReturn(delimiter);
         when(config.get(FIXFilter.DICTIONARY_FIELD_NAMES)).thenReturn(FIXFilter.DICTIONARY_FIELD_NAMES.defaultValue());
-        when(config.get(FIXFilter.JAVA_TIME_DATES)).thenReturn(FIXFilter.JAVA_TIME_DATES.defaultValue());
         when(config.get(FIXFilter.SOURCE_CONFIG)).thenReturn(FIXFilter.SOURCE_CONFIG.defaultValue());
         when(config.get(FIXFilter.TARGET_CONFIG)).thenReturn(FIXFilter.TARGET_CONFIG.defaultValue());
         Context context = mock(Context.class);

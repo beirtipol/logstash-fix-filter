@@ -704,7 +704,6 @@ public class FIXFilter implements Filter {
     public static final PluginConfigSpec<String>  DELIMITER_CONFIG       = PluginConfigSpec.stringSetting("delimiter", SOH);
     public static final PluginConfigSpec<URI>     DICTIONARY_PATH_CONFIG = PluginConfigSpec.uriSetting("dictionary_path", "FIX50SP2.xml");
     public static final PluginConfigSpec<Boolean> DICTIONARY_FIELD_NAMES = PluginConfigSpec.booleanSetting("dictionary_field_names", true);
-    public static final PluginConfigSpec<Boolean> JAVA_TIME_DATES        = PluginConfigSpec.booleanSetting("java_time_dates", false);
     public static final PluginConfigSpec<String>  SOURCE_CONFIG          = PluginConfigSpec.stringSetting("source", "message");
     public static final PluginConfigSpec<String>  TARGET_CONFIG          = PluginConfigSpec.stringSetting("target", "fix_message");
 
@@ -714,7 +713,6 @@ public class FIXFilter implements Filter {
     private final String                targetField;
     private final DataDictionary        dictionary;
     private final boolean               useDictionaryFieldNames;
-    private final boolean               useJavaTimeDates;
     private       DefaultMessageFactory messageFactory;
 
     public FIXFilter(final String id, final Configuration config, final Context context) {
@@ -723,7 +721,6 @@ public class FIXFilter implements Filter {
 
         URI dictionaryPath = config.get(DICTIONARY_PATH_CONFIG);
         this.useDictionaryFieldNames = config.get(DICTIONARY_FIELD_NAMES);
-        this.useJavaTimeDates        = config.get(JAVA_TIME_DATES);
         this.sourceField             = config.get(SOURCE_CONFIG);
         this.targetField             = config.get(TARGET_CONFIG);
         try {
@@ -822,28 +819,11 @@ public class FIXFilter implements Filter {
             case FLOAT:
                 destination.put(fieldName, Float.parseFloat(fieldValue));
                 break;
+                // Logstash could but does not currently support java.time classes.
             case UTCTIMESTAMP:
-                if (useJavaTimeDates) {
-                    destination.put(fieldName, LocalDateTime.parse(fieldValue, UTC_TIMESTAMP_FORMAT));
-                } else {
-                    destination.put(fieldName, fieldValue);
-                }
-                break;
             case UTCDATE:
             case UTCDATEONLY:
-                if (useJavaTimeDates) {
-                    destination.put(fieldName, LocalDate.parse(fieldValue, UTC_DATE_FORMAT));
-                } else {
-                    destination.put(fieldName, fieldValue);
-                }
-                break;
             case UTCTIMEONLY:
-                if (useJavaTimeDates) {
-                    destination.put(fieldName, LocalTime.parse(fieldValue));
-                } else {
-                    destination.put(fieldName, fieldValue);
-                }
-                break;
             default:
                 destination.put(fieldName, fieldValue);
                 break;
@@ -855,7 +835,6 @@ public class FIXFilter implements Filter {
         return List.of(DELIMITER_CONFIG,
                 DICTIONARY_PATH_CONFIG,
                 DICTIONARY_FIELD_NAMES,
-                JAVA_TIME_DATES,
                 TARGET_CONFIG);
     }
 
