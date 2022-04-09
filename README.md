@@ -29,7 +29,7 @@ filter {
       source => "message"
       
       # The target field to store the fix_message in
-      target => "target"
+      target => "fix_message"
    }
 }
 ```
