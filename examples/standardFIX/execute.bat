@@ -1,0 +1,1 @@
+c:\dev\logstash\logstash-8.1.2\bin\logstash -f "%cd%\logstash.conf"

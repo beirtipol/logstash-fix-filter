@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="logstash-core">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../logstash/logstash-core/build/libs/logstash-core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
