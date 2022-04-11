@@ -38,6 +38,11 @@ See the [./examples](./examples) folder for some more logstash configs using thi
 
 
 # Build instructions
+
+Building logstash plugins can be a little convoluted. This project makes use of docker to download and build the 
+required logstash dependencies in order to build the plugin. Simply run [./buildWithDocker.bat](./buildWithDocker.bat) or [./buildWithDocker.sh](./buildWithDocker.sh)
+
+## Building Manually
 This project was built using the logstash 8.3.0 source following the guide [here](https://www.elastic.co/guide/en/logstash/current/java-filter-plugin.html)
 There was one nasty gotcha. The `gem` task in [./build.gradle](./build.gradle) in the logstash guide is missing an '=' for the dependsOn.
 ```
@@ -54,7 +59,9 @@ tasks.register("gem"){
 2. Open a terminal in the current path and execute  `./gradlew gem`
    1. Note: The gradle daemon seems to hold a handle to the produced artifacts. You may need to kill the gradle daemon before rebuilding with `./gradle -stop`
 3. This will produce [./logstash-filter-fix_filter-x.x.x.gem](./logstash-filter-fix_filter-x.x.x.gem). Copy the full path to this file.
-4. In your logstash installation, install with `.\logstash-plugin install --no-verify --local C:/dev/source/logstash-fix-filter/logstash-filter-fix_filter-1.0.0.gem`
+
+# Installing the plugin in to logstash
+1. In your logstash installation, install with `.\logstash-plugin install --no-verify --local C:/dev/source/logstash-fix-filter/logstash-filter-fix_filter-1.0.0.gem`
    1. This assumes the current directory of this project is `c:\dev\source\logstash-fix-filter`. Update as appropriate.
 
 ## Licensing?
