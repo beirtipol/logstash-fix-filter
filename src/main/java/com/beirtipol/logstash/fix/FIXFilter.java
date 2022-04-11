@@ -835,6 +835,7 @@ public class FIXFilter implements Filter {
         return List.of(DELIMITER_CONFIG,
                 DICTIONARY_PATH_CONFIG,
                 DICTIONARY_FIELD_NAMES,
+                SOURCE_CONFIG,
                 TARGET_CONFIG);
     }
 
