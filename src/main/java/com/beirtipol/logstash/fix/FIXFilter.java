@@ -820,15 +820,9 @@ public class FIXFilter implements Filter {
                 destination.put(fieldName, Float.parseFloat(fieldValue));
                 break;
             case UTCTIMESTAMP:
-                destination.put(fieldName, LocalDateTime.parse(fieldValue, UTC_TIMESTAMP_FORMAT)).toString();
-                break;
             case UTCDATE:
             case UTCDATEONLY:
-                destination.put(fieldName, LocalDate.parse(fieldValue, UTC_DATE_FORMAT)).toString();
-                break;
             case UTCTIMEONLY:
-                destination.put(fieldName, LocalTime.parse(fieldValue)).toString();
-                break;
             default:
                 destination.put(fieldName, fieldValue);
                 break;
