@@ -684,9 +684,6 @@ import org.slf4j.LoggerFactory;
 import quickfix.*;
 
 import java.net.URI;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -702,7 +699,7 @@ public class FIXFilter implements Filter {
     private static final DateTimeFormatter UTC_DATE_FORMAT      = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public static final PluginConfigSpec<String>  DELIMITER_CONFIG       = PluginConfigSpec.stringSetting("delimiter", SOH);
-    public static final PluginConfigSpec<URI>     DICTIONARY_PATH_CONFIG = PluginConfigSpec.uriSetting("dictionary_path", "FIX50SP2.xml");
+    public static final PluginConfigSpec<String>  DICTIONARY_CONFIG      = PluginConfigSpec.stringSetting("dictionary", "FIX50SP2.xml");
     public static final PluginConfigSpec<Boolean> DICTIONARY_FIELD_NAMES = PluginConfigSpec.booleanSetting("dictionary_field_names", true);
     public static final PluginConfigSpec<String>  SOURCE_CONFIG          = PluginConfigSpec.stringSetting("source", "message");
     public static final PluginConfigSpec<String>  TARGET_CONFIG          = PluginConfigSpec.stringSetting("target", "fix_message");
@@ -719,15 +716,15 @@ public class FIXFilter implements Filter {
         this.id        = id;
         this.delimiter = config.get(DELIMITER_CONFIG);
 
-        URI dictionaryPath = config.get(DICTIONARY_PATH_CONFIG);
+        String dictionary = config.get(DICTIONARY_CONFIG);
         this.useDictionaryFieldNames = config.get(DICTIONARY_FIELD_NAMES);
         this.sourceField             = config.get(SOURCE_CONFIG);
         this.targetField             = config.get(TARGET_CONFIG);
         try {
-            this.dictionary     = new DataDictionary(dictionaryPath.toString());
+            this.dictionary     = new DataDictionary(dictionary.toString());
             this.messageFactory = new DefaultMessageFactory();
         } catch (ConfigError e) {
-            throw new IllegalArgumentException("Could not initialize Filter with Dictionary from " + dictionaryPath, e);
+            throw new IllegalArgumentException("Could not initialize Filter with Dictionary from " + dictionary, e);
         }
     }
 
@@ -833,7 +830,7 @@ public class FIXFilter implements Filter {
     @Override
     public Collection<PluginConfigSpec<?>> configSchema() {
         return List.of(DELIMITER_CONFIG,
-                DICTIONARY_PATH_CONFIG,
+                DICTIONARY_CONFIG,
                 DICTIONARY_FIELD_NAMES,
                 SOURCE_CONFIG,
                 TARGET_CONFIG);

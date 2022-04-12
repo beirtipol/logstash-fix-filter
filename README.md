@@ -19,7 +19,7 @@ filter {
       delimiter => ""
       
       # This can be any standard FIX dictionary included in QuickFIXJ, or you can specify a filesystem path
-      dictionary_path => "FIX50SP2.xml"
+      dictionary => "FIX50SP2.xml"
       
       # Whether or not to use the dictionary field names or just use tag numbers.
       # Any fields not present in the dictionary will be stored with a field name of the tag number 
