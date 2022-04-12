@@ -678,10 +678,8 @@
 
 package com.beirtipol.logstash.fix;
 
-import co.elastic.logstash.api.Configuration;
-import co.elastic.logstash.api.Context;
-import co.elastic.logstash.api.Event;
-import co.elastic.logstash.api.FilterMatchListener;
+import co.elastic.logstash.api.*;
+
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

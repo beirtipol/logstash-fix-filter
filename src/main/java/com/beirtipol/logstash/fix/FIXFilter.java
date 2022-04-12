@@ -678,6 +678,8 @@
 
 package com.beirtipol.logstash.fix;
 
+import co.elastic.logstash.api.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.*;
