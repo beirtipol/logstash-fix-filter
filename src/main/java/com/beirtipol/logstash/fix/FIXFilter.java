@@ -678,12 +678,13 @@
 
 package com.beirtipol.logstash.fix;
 
-import co.elastic.logstash.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.*;
 
-import java.net.URI;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -816,11 +817,16 @@ public class FIXFilter implements Filter {
             case FLOAT:
                 destination.put(fieldName, Float.parseFloat(fieldValue));
                 break;
-                // Logstash could but does not currently support java.time classes.
             case UTCTIMESTAMP:
+                destination.put(fieldName, LocalDateTime.parse(fieldValue, UTC_TIMESTAMP_FORMAT)).toString();
+                break;
             case UTCDATE:
             case UTCDATEONLY:
+                destination.put(fieldName, LocalDate.parse(fieldValue, UTC_DATE_FORMAT)).toString();
+                break;
             case UTCTIMEONLY:
+                destination.put(fieldName, LocalTime.parse(fieldValue)).toString();
+                break;
             default:
                 destination.put(fieldName, fieldValue);
                 break;

@@ -704,7 +704,7 @@ public class FIXFilterTest {
 
     public FIXFilter createFilter(String dictionary, String delimiter) {
         Configuration config = mock(Configuration.class);
-        when(config.get(FIXFilter.DICTIONARY_CONFIG)).thenReturn(URI.create(dictionary));
+        when(config.get(FIXFilter.DICTIONARY_CONFIG)).thenReturn(dictionary);
         when(config.get(FIXFilter.DELIMITER_CONFIG)).thenReturn(delimiter);
         when(config.get(FIXFilter.DICTIONARY_FIELD_NAMES)).thenReturn(FIXFilter.DICTIONARY_FIELD_NAMES.defaultValue());
         when(config.get(FIXFilter.SOURCE_CONFIG)).thenReturn(FIXFilter.SOURCE_CONFIG.defaultValue());
