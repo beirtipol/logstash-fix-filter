@@ -705,11 +705,14 @@ public class FIXFilterTest {
         when(config.get(FIXFilter.DICTIONARY_CONFIG)).thenReturn(dictionary);
         when(config.get(FIXFilter.DELIMITER_CONFIG)).thenReturn(delimiter);
         when(config.get(FIXFilter.DICTIONARY_FIELD_NAMES)).thenReturn(FIXFilter.DICTIONARY_FIELD_NAMES.defaultValue());
+        when(config.get(FIXFilter.VALIDATE_CHECKSUM)).thenReturn(FIXFilter.VALIDATE_CHECKSUM.defaultValue());
         when(config.get(FIXFilter.SOURCE_CONFIG)).thenReturn(FIXFilter.SOURCE_CONFIG.defaultValue());
         when(config.get(FIXFilter.TARGET_CONFIG)).thenReturn(FIXFilter.TARGET_CONFIG.defaultValue());
         Context context = mock(Context.class);
         return new FIXFilter(UUID.randomUUID().toString(), config, context);
     }
+
+
 
     @Test
     public void initializeWithClasspathDictionary() throws Exception {
@@ -721,6 +724,19 @@ public class FIXFilterTest {
         FIXFilter filter = createFilter("FIX41.xml");
 
         String logonMessage = "8=FIX.4.1\u00019=61\u000135=A\u000134=1\u000149=EXEC\u000152=20121105-23:24:06\u000156=BANZAI\u000198=0\u0001108=30\u000110=003\u0001";
+
+        ByteBuffer buffer = ByteBuffer.wrap(logonMessage.toString().getBytes());
+
+        JXPathContext context = filterMessageAndGetContext(logonMessage, filter);
+
+        Assertions.assertEquals("BANZAI", context.getValue("//TargetCompID"));
+    }
+
+    @Test
+    public void decodeInvalidChecksumMessage() throws Exception {
+        FIXFilter filter = createFilter("FIX41.xml");
+
+        String logonMessage = "8=FIX.4.1\u00019=61\u000135=A\u000134=1\u000149=EXEC\u000152=20121105-23:24:06\u000156=BANZAI\u000198=0\u0001108=30\u000110=999\u0001";
 
         ByteBuffer buffer = ByteBuffer.wrap(logonMessage.toString().getBytes());
 

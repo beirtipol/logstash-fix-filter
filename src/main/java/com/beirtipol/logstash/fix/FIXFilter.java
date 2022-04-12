@@ -684,9 +684,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -705,7 +702,8 @@ public class FIXFilter implements Filter {
     public static final PluginConfigSpec<String>  DICTIONARY_CONFIG      = PluginConfigSpec.stringSetting("dictionary", "FIX50SP2.xml");
     public static final PluginConfigSpec<Boolean> DICTIONARY_FIELD_NAMES = PluginConfigSpec.booleanSetting("dictionary_field_names", true);
     public static final PluginConfigSpec<String>  SOURCE_CONFIG          = PluginConfigSpec.stringSetting("source", "message");
-    public static final PluginConfigSpec<String>  TARGET_CONFIG          = PluginConfigSpec.stringSetting("target", "fix_message");
+    public static final PluginConfigSpec<String>  TARGET_CONFIG     = PluginConfigSpec.stringSetting("target", "fix_message");
+    public static final PluginConfigSpec<Boolean> VALIDATE_CHECKSUM = PluginConfigSpec.booleanSetting("validate_checksum", false);
 
     private final String                id;
     private final String                delimiter;
@@ -713,6 +711,7 @@ public class FIXFilter implements Filter {
     private final String                targetField;
     private final DataDictionary        dictionary;
     private final boolean               useDictionaryFieldNames;
+    private final boolean               validateChecksum;
     private       DefaultMessageFactory messageFactory;
 
     public FIXFilter(final String id, final Configuration config, final Context context) {
@@ -721,6 +720,7 @@ public class FIXFilter implements Filter {
 
         String dictionary = config.get(DICTIONARY_CONFIG);
         this.useDictionaryFieldNames = config.get(DICTIONARY_FIELD_NAMES);
+        this.validateChecksum        = config.get(VALIDATE_CHECKSUM);
         this.sourceField             = config.get(SOURCE_CONFIG);
         this.targetField             = config.get(TARGET_CONFIG);
         try {
@@ -742,7 +742,7 @@ public class FIXFilter implements Filter {
                     if (!SOH.equals(delimiter)) {
                         input = input.replace(delimiter, SOH);
                     }
-                    Message message = MessageUtils.parse(messageFactory, dictionary, input);
+                    Message message = MessageUtils.parse(messageFactory, dictionary, input, validateChecksum);
                     addFieldMapToJSON(message.getHeader(), result);
                     addFieldMapToJSON(message, result);
                     addFieldMapToJSON(message.getTrailer(), result);
@@ -834,6 +834,7 @@ public class FIXFilter implements Filter {
         return List.of(DELIMITER_CONFIG,
                 DICTIONARY_CONFIG,
                 DICTIONARY_FIELD_NAMES,
+                VALIDATE_CHECKSUM,
                 SOURCE_CONFIG,
                 TARGET_CONFIG);
     }
