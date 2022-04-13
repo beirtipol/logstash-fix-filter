@@ -883,7 +883,7 @@ public class FIXFilter implements Filter {
         for (int i = 0; i < childNodes.getLength(); i++) {
             LinkedHashMap<String, Object> child = new LinkedHashMap<>();
             Node childNode = childNodes.item(i);
-            if (childNode instanceof Comment) {
+            if (childNode instanceof Comment||childNode instanceof Text) {
                 continue;
             }
 
