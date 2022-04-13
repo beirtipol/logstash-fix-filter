@@ -813,6 +813,10 @@ public class FIXFilter implements Filter {
         if (xmlFields.contains(fieldTag)) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             try {
+                // Deal with malformed XML fields. This can happen if the fix data has been already parsed and the field length is incorrect.
+                if(fieldValue.contains(SOH)){
+                    fieldValue = fieldValue.substring(0,fieldValue.indexOf(SOH));
+                }
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 Document document = builder.parse(new InputSource(new StringReader(fieldValue)));
                 LinkedHashMap<String, Object> xmlMap = new LinkedHashMap<>();
