@@ -679,13 +679,23 @@
 package com.beirtipol.logstash.fix;
 
 import co.elastic.logstash.api.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import quickfix.*;
+import quickfix.field.EncodedSecurityDesc;
+import quickfix.field.XmlData;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -698,12 +708,13 @@ public class FIXFilter implements Filter {
     private static final DateTimeFormatter UTC_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss.SSS");
     private static final DateTimeFormatter UTC_DATE_FORMAT      = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-    public static final PluginConfigSpec<String>  DELIMITER_CONFIG       = PluginConfigSpec.stringSetting("delimiter", SOH);
-    public static final PluginConfigSpec<String>  DICTIONARY_CONFIG      = PluginConfigSpec.stringSetting("dictionary", "FIX50SP2.xml");
-    public static final PluginConfigSpec<Boolean> DICTIONARY_FIELD_NAMES = PluginConfigSpec.booleanSetting("dictionary_field_names", true);
-    public static final PluginConfigSpec<String>  SOURCE_CONFIG          = PluginConfigSpec.stringSetting("source", "message");
-    public static final PluginConfigSpec<String>  TARGET_CONFIG     = PluginConfigSpec.stringSetting("target", "fix_message");
-    public static final PluginConfigSpec<Boolean> VALIDATE_CHECKSUM = PluginConfigSpec.booleanSetting("validate_checksum", false);
+    public static final PluginConfigSpec<String>       DELIMITER_CONFIG       = PluginConfigSpec.stringSetting("delimiter", SOH);
+    public static final PluginConfigSpec<String>       DICTIONARY_CONFIG      = PluginConfigSpec.stringSetting("dictionary", "FIX50SP2.xml");
+    public static final PluginConfigSpec<Boolean>      DICTIONARY_FIELD_NAMES = PluginConfigSpec.booleanSetting("dictionary_field_names", true);
+    public static final PluginConfigSpec<String>       SOURCE_CONFIG          = PluginConfigSpec.stringSetting("source", "message");
+    public static final PluginConfigSpec<String>       TARGET_CONFIG          = PluginConfigSpec.stringSetting("target", "fix_message");
+    public static final PluginConfigSpec<Boolean>      VALIDATE_CHECKSUM      = PluginConfigSpec.booleanSetting("validate_checksum", false);
+    public static final PluginConfigSpec<List<Object>> XML_FIELDS             = PluginConfigSpec.arraySetting("xml_fields", List.of(XmlData.FIELD, EncodedSecurityDesc.FIELD), false, false);
 
     private final String                id;
     private final String                delimiter;
@@ -712,6 +723,7 @@ public class FIXFilter implements Filter {
     private final DataDictionary        dictionary;
     private final boolean               useDictionaryFieldNames;
     private final boolean               validateChecksum;
+    private final List<Integer>         xmlFields;
     private       DefaultMessageFactory messageFactory;
 
     public FIXFilter(final String id, final Configuration config, final Context context) {
@@ -723,6 +735,10 @@ public class FIXFilter implements Filter {
         this.validateChecksum        = config.get(VALIDATE_CHECKSUM);
         this.sourceField             = config.get(SOURCE_CONFIG);
         this.targetField             = config.get(TARGET_CONFIG);
+        xmlFields                    = config.get(XML_FIELDS).stream()
+                .map(Object::toString)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
         try {
             this.dictionary     = new DataDictionary(dictionary.toString());
             this.messageFactory = new DefaultMessageFactory();
@@ -792,41 +808,93 @@ public class FIXFilter implements Filter {
     }
 
     private void addFieldToJSON(StringField field, String fieldName, Map<String, Object> destination) {
-        FieldType fieldType = dictionary.getFieldType(field.getField());
-        if (fieldType == null) {
-            // Fields not listed in the dictionary
-            fieldType = FieldType.STRING;
-        }
+        int fieldTag = field.getField();
         String fieldValue = field.getValue();
-        switch (fieldType) {
-            case BOOLEAN:
-                destination.put(fieldName, Boolean.valueOf(fieldValue));
-                break;
-            case INT:
-            case NUMINGROUP:
-            case LENGTH:
-            case SEQNUM:
-            case DAYOFMONTH:
-                destination.put(fieldName, Integer.parseInt(fieldValue));
-                break;
-            case QTY:
-            case AMT:
-            case PRICE:
-            case PRICEOFFSET:
-            case PERCENTAGE:
-                destination.put(fieldName, Double.parseDouble(fieldValue));
-                break;
-            case FLOAT:
-                destination.put(fieldName, Float.parseFloat(fieldValue));
-                break;
-            case UTCTIMESTAMP:
-            case UTCDATE:
-            case UTCDATEONLY:
-            case UTCTIMEONLY:
-            default:
-                destination.put(fieldName, fieldValue);
-                break;
+        if (xmlFields.contains(fieldTag)) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            try {
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document document = builder.parse(new InputSource(new StringReader(fieldValue)));
+                LinkedHashMap<String, Object> xmlMap = new LinkedHashMap<>();
+                addXMLToJSON(document, xmlMap);
+                destination.put(fieldName, xmlMap);
+            } catch (ParserConfigurationException e) {
+                LOG.error("Unable to create DocumentBuilder", e);
+            } catch (SAXException | IOException e) {
+                LOG.error("Unable to parse XML Document", e);
+            }
+        } else {
+            FieldType fieldType = dictionary.getFieldType(fieldTag);
+            if (fieldType == null) {
+                // Fields not listed in the dictionary
+                fieldType = FieldType.STRING;
+            }
+
+            switch (fieldType) {
+                case BOOLEAN:
+                    destination.put(fieldName, Boolean.valueOf(fieldValue));
+                    break;
+                case INT:
+                case NUMINGROUP:
+                case LENGTH:
+                case SEQNUM:
+                case DAYOFMONTH:
+                    destination.put(fieldName, Integer.parseInt(fieldValue));
+                    break;
+                case QTY:
+                case AMT:
+                case PRICE:
+                case PRICEOFFSET:
+                case PERCENTAGE:
+                    destination.put(fieldName, Double.parseDouble(fieldValue));
+                    break;
+                case FLOAT:
+                    destination.put(fieldName, Float.parseFloat(fieldValue));
+                    break;
+                case UTCTIMESTAMP:
+                case UTCDATE:
+                case UTCDATEONLY:
+                case UTCTIMEONLY:
+                default:
+                    destination.put(fieldName, fieldValue);
+                    break;
+            }
         }
+    }
+
+    private void addXMLToJSON(Node node, Map<String, Object> destination) {
+        Map<String, Object> nodeData = new LinkedHashMap<>();
+        if (node.hasAttributes()) {
+            Map<String, Object> attributes = new LinkedHashMap<>();
+            NamedNodeMap atts = node.getAttributes();
+            for (int i = 0; i < atts.getLength(); i++) {
+                Node attribute = atts.item(i);
+                attributes.put(attribute.getNodeName(), attribute.getTextContent());
+            }
+            nodeData.put("attributes", attributes);
+        }
+
+        NodeList childNodes = node.getChildNodes();
+        List<Map<String,Object>> children = new ArrayList<>();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            LinkedHashMap<String, Object> child = new LinkedHashMap<>();
+            Node childNode = childNodes.item(i);
+            if (childNode instanceof Comment) {
+                continue;
+            }
+
+            addXMLToJSON(childNode, child);
+            children.add(child);
+            nodeData.put("childNodes", children);
+        }
+
+        if (children.size() == 0) {
+            String textContent = node.getTextContent();
+            if (textContent != null && !textContent.isBlank()) {
+                nodeData.put("textContent", node.getTextContent());
+            }
+        }
+        destination.put(node.getNodeName().replaceAll("[\\#\\\\\\/\\?\\*]",""), nodeData);
     }
 
     @Override
@@ -834,9 +902,10 @@ public class FIXFilter implements Filter {
         return List.of(DELIMITER_CONFIG,
                 DICTIONARY_CONFIG,
                 DICTIONARY_FIELD_NAMES,
-                VALIDATE_CHECKSUM,
                 SOURCE_CONFIG,
-                TARGET_CONFIG);
+                TARGET_CONFIG,
+                VALIDATE_CHECKSUM,
+                XML_FIELDS);
     }
 
     @Override

@@ -20,8 +20,8 @@ pluginInfo.pluginClass     = "FIXFilter"
 pluginInfo.pluginName      = "fix_filter" // must match the @LogstashPlugin annotation in the main plugin class
 // ===========================================================================
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 buildscript {
     repositories {
@@ -58,8 +58,8 @@ dependencies {
     testImplementation 'org.mockito:mockito-all:1.10.19'
     testImplementation 'commons-jxpath:commons-jxpath:1.3'
     implementation 'org.jruby:jruby-core:9.2.20.1'
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.9.10'
-    compileOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.9.10'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.10'
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.9.10'
     implementation files(LOGSTASH_CORE_PATH + "/build/libs/logstash-core.jar")
 }
 
@@ -80,6 +80,7 @@ test {
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
 
 tasks.register("vendor"){
     dependsOn shadowJar

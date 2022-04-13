@@ -678,15 +678,16 @@
 
 package com.beirtipol.logstash.fix;
 
-import co.elastic.logstash.api.*;
-
+import co.elastic.logstash.api.Configuration;
+import co.elastic.logstash.api.Context;
+import co.elastic.logstash.api.Event;
+import co.elastic.logstash.api.FilterMatchListener;
 import org.apache.commons.jxpath.JXPathContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import quickfix.field.*;
 import quickfix.fix44.NewOrderSingle;
 
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.UUID;
@@ -708,10 +709,10 @@ public class FIXFilterTest {
         when(config.get(FIXFilter.VALIDATE_CHECKSUM)).thenReturn(FIXFilter.VALIDATE_CHECKSUM.defaultValue());
         when(config.get(FIXFilter.SOURCE_CONFIG)).thenReturn(FIXFilter.SOURCE_CONFIG.defaultValue());
         when(config.get(FIXFilter.TARGET_CONFIG)).thenReturn(FIXFilter.TARGET_CONFIG.defaultValue());
+        when(config.get(FIXFilter.XML_FIELDS)).thenReturn(FIXFilter.XML_FIELDS.defaultValue());
         Context context = mock(Context.class);
         return new FIXFilter(UUID.randomUUID().toString(), config, context);
     }
-
 
 
     @Test
@@ -755,10 +756,29 @@ public class FIXFilterTest {
         Assertions.assertEquals("BANZAI", context.getValue("//TargetCompID"));
     }
 
+    @Test
+    public void decodeXMLData() throws Exception {
+        FIXFilter filter = createFilter("FIX50SP2.xml");
+
+        String logonMessage = "8=FIX.4.1\u00019=61\u000135=8\u0001350=124\u0001351=<?xml version=\"1.0\" encoding=\"utf-8\"?><xml><parent name=\"parent\"><kids><kid name=\"Jack\" age=\"3\"/><kid name=\"Sally\" age=\"4\"/></kids></parent></xml>\u000134=1\u000149=EXEC\u000152=20121105-23:24:06\u000156=BANZAI\u000198=0\u0001108=30\u000110=999\u0001";
+
+        ByteBuffer buffer = ByteBuffer.wrap(logonMessage.toString().getBytes());
+
+        JXPathContext context = filterMessageAndGetContext(logonMessage, filter);
+
+        Assertions.assertEquals("Jack", context.getValue("//EncodedSecurityDesc/document/childNodes[1]/xml/childNodes[1]/parent/childNodes[1]/kids/childNodes[1]/kid/attributes/name"));
+    }
+
     private JXPathContext filterMessageAndGetContext(String logonMessage, FIXFilter filter) {
         Event event = new org.logstash.Event();
         event.setField(FIXFilter.SOURCE_CONFIG.defaultValue(), logonMessage);
         filter.filter(List.of(event), mock(FilterMatchListener.class));
+        // Useful for debugging
+//        try {
+//            System.out.println(((org.logstash.Event) event).toJson());
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//        }
         JXPathContext context = JXPathContext.newContext(event.getField("fix_message"));
         return context;
     }
